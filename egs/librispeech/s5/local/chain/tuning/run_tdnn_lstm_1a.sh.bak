@@ -1,58 +1,23 @@
 #!/usr/bin/env bash
-# this is the tdnn-lstmp based on the run_tdnn_lstm_1a.sh under Librispeech but with larger model size.
+# this is the tdnn-lstmp based on the run_tdnn_lstm_1n.sh under Switchboard.
 
 # training acoustic model and decoding:
-#     local/chain/tuning/run_tdnn_lstm_1b.sh
-# local/chain/compare_wer.sh exp/chain_cleaned/tdnn_lstm1a_sp exp/chain_cleaned/tdnn_lstm1b_sp
-# System                      tdnn_lstm1a_sp tdnn_lstm1b_sp
-# WER on dev(fglarge)              3.44      3.36
-# WER on dev(tglarge)              3.55      3.48
-# WER on dev(tgmed)                4.41      4.26
-# WER on dev(tgsmall)              4.82      4.71
-# WER on dev_other(fglarge)        8.63      8.43
-# WER on dev_other(tglarge)        9.09      8.94
-# WER on dev_other(tgmed)         10.99     10.65
-# WER on dev_other(tgsmall)       11.95     11.51
-# WER on test(fglarge)             3.78      3.83
-# WER on test(tglarge)             3.94      3.93
-# WER on test(tgmed)               4.68      4.72
-# WER on test(tgsmall)             5.11      5.10
-# WER on test_other(fglarge)       8.83      8.69
-# WER on test_other(tglarge)       9.09      9.10
-# WER on test_other(tgmed)        11.05     10.86
-# WER on test_other(tgsmall)      12.18     11.83
-# Final train prob              -0.0452   -0.0417
-# Final valid prob              -0.0477   -0.0459
-# Final train prob (xent)       -0.7874   -0.7488
-# Final valid prob (xent)       -0.8150   -0.7757
-# Num-parameters               27790288  45245520
-
-# rnn-lm rescoring:
-#     local/rnnlm/tuning/run_tdnn_lstm_1a.sh --ac-model-dir exp/chain_cleaned/tdnn_lstm1b_sp/
-# System                      tdnn_lstm1b_sp
-# WER on dev(fglarge_nbe_rnnlm)      2.73
-# WER on dev(fglarge_lat_rnnlm)        2.83
-# WER on dev(fglarge)              3.36
-# WER on dev(tglarge)              3.48
-# WER on dev_other(fglarge_nbe_rnnlm)      7.20
-# WER on dev_other(fglarge_lat_rnnlm)      7.23
-# WER on dev_other(fglarge)        8.43
-# WER on dev_other(tglarge)        8.94
-# WER on test(fglarge_nbe_rnnlm)      3.10
-# WER on test(fglarge_lat_rnnlm)       3.22
-# WER on test(fglarge)             3.83
-# WER on test(tglarge)             3.93
-# WER on test_other(fglarge_nbe_rnnlm)      7.54
-# WER on test_other(fglarge_lat_rnnlm)      7.65
-# WER on test_other(fglarge)       8.69
-# WER on test_other(tglarge)       9.10
-# Final train prob              -0.0417
-# Final valid prob              -0.0459
-# Final train prob (xent)       -0.7488
-# Final valid prob (xent)       -0.7757
-# Num-parameters               45245520
-
-
+#     local/chain/tuning/run_tdnn_lstm_1a.sh
+# System                      tdnn_lstm1a_sp
+# WER on dev(fglarge)              3.44
+# WER on dev(tglarge)              3.55
+# WER on dev_other(fglarge)        8.63
+# WER on dev_other(tglarge)        9.09
+# WER on test(fglarge)             3.78
+# WER on test(tglarge)             3.94
+# WER on test_other(fglarge)       8.83
+# WER on test_other(tglarge)       9.09
+# Final train prob              -0.0452
+# Final valid prob              -0.0477
+# Final train prob (xent)       -0.7874
+# Final valid prob (xent)       -0.8150
+# Num-parameters               27790288
+# exp/chain_cleaned/tdnn_lstm1a_sp/: num-iters=1303 nj=3..16 num-params=27.8M dim=40+100->6056 combine=-0.041->-0.040 (over 9) xent:train/valid[867,1302,final]=(-1.15,-0.782,-0.787/-1.18,-0.810,-0.815) logprob:train/valid[867,1302,final]=(-0.063,-0.047,-0.045/-0.062,-0.049,-0.048)
 
 set -e
 
@@ -61,7 +26,7 @@ stage=12
 train_stage=-10
 get_egs_stage=-10
 speed_perturb=true
-affix=1b
+affix=1a
 decode_iter=
 decode_nj=50
 
@@ -137,28 +102,28 @@ if [ $stage -le 12 ]; then
 
   # the first splicing is moved before the lda layer, so no splicing here
   relu-batchnorm-layer name=tdnn1 $opts dim=1280
-  linear-component name=tdnn2l dim=320 $linear_opts input=Append(-1,0)
+  linear-component name=tdnn2l dim=256 $linear_opts input=Append(-1,0)
   relu-batchnorm-layer name=tdnn2 $opts input=Append(0,1) dim=1280
-  linear-component name=tdnn3l dim=320 $linear_opts
+  linear-component name=tdnn3l dim=256 $linear_opts
   relu-batchnorm-layer name=tdnn3 $opts dim=1280
-  linear-component name=tdnn4l dim=320 $linear_opts input=Append(-1,0)
+  linear-component name=tdnn4l dim=256 $linear_opts input=Append(-1,0)
   relu-batchnorm-layer name=tdnn4 $opts input=Append(0,1) dim=1280
-  linear-component name=tdnn5l dim=320 $linear_opts
+  linear-component name=tdnn5l dim=256 $linear_opts
   relu-batchnorm-layer name=tdnn5 $opts dim=1280 input=Append(tdnn5l, tdnn3l)
-  linear-component name=tdnn6l dim=320 $linear_opts input=Append(-3,0)
+  linear-component name=tdnn6l dim=256 $linear_opts input=Append(-3,0)
   relu-batchnorm-layer name=tdnn6 $opts input=Append(0,3) dim=1280
-  linear-component name=lstm1l dim=320 $linear_opts input=Append(-3,0)
-  fast-lstmp-layer name=lstm1 cell-dim=1536 recurrent-projection-dim=384 non-recurrent-projection-dim=384 delay=-3 dropout-proportion=0.0 $lstm_opts
+  linear-component name=lstm1l dim=256 $linear_opts input=Append(-3,0)
+  fast-lstmp-layer name=lstm1 cell-dim=1024 recurrent-projection-dim=256 non-recurrent-projection-dim=128 delay=-3 dropout-proportion=0.0 $lstm_opts
   relu-batchnorm-layer name=tdnn7 $opts input=Append(0,3,tdnn6l,tdnn4l,tdnn2l) dim=1280
-  linear-component name=tdnn8l dim=320 $linear_opts input=Append(-3,0)
+  linear-component name=tdnn8l dim=256 $linear_opts input=Append(-3,0)
   relu-batchnorm-layer name=tdnn8 $opts input=Append(0,3) dim=1280
-  linear-component name=lstm2l dim=320 $linear_opts input=Append(-3,0)
-  fast-lstmp-layer name=lstm2 cell-dim=1536 recurrent-projection-dim=384 non-recurrent-projection-dim=384 delay=-3 dropout-proportion=0.0 $lstm_opts
+  linear-component name=lstm2l dim=256 $linear_opts input=Append(-3,0)
+  fast-lstmp-layer name=lstm2 cell-dim=1280 recurrent-projection-dim=256 non-recurrent-projection-dim=128 delay=-3 dropout-proportion=0.0 $lstm_opts
   relu-batchnorm-layer name=tdnn9 $opts input=Append(0,3,tdnn8l,tdnn6l,tdnn4l) dim=1280
-  linear-component name=tdnn10l dim=320 $linear_opts input=Append(-3,0)
+  linear-component name=tdnn10l dim=256 $linear_opts input=Append(-3,0)
   relu-batchnorm-layer name=tdnn10 $opts input=Append(0,3) dim=1280
-  linear-component name=lstm3l dim=320 $linear_opts input=Append(-3,0)
-  fast-lstmp-layer name=lstm3 cell-dim=1536 recurrent-projection-dim=384 non-recurrent-projection-dim=384: delay=-3 dropout-proportion=0.0 $lstm_opts
+  linear-component name=lstm3l dim=256 $linear_opts input=Append(-3,0)
+  fast-lstmp-layer name=lstm3 cell-dim=1280 recurrent-projection-dim=256 non-recurrent-projection-dim=128 delay=-3 dropout-proportion=0.0 $lstm_opts
 
   output-layer name=output input=lstm3  include-log-softmax=false $output_opts
 
