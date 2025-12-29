@@ -14,6 +14,7 @@ dict_dir=""
 decode_severity=true
 mfccdir=mfcc
 mfccdir_hires=mfcc_hires
+speed_perturb=true
 
 # GMM sizes (tune for your data scale)
 tri1_leaves=800
@@ -125,6 +126,19 @@ if [ $stage -le 3 ]; then
 fi
 
 if [ $stage -le 4 ]; then
+  if $speed_perturb; then
+    if [ ! -d "data/${train_set}_sp" ]; then
+      utils/data/perturb_data_dir_speed_3way.sh "data/$train_set" "data/${train_set}_sp"
+      steps/make_mfcc_pitch.sh --cmd "$train_cmd" --nj "$nj" "data/${train_set}_sp" \
+        "exp/make_mfcc/${train_set}_sp" "$mfccdir"
+      steps/compute_cmvn_stats.sh "data/${train_set}_sp" "exp/make_mfcc/${train_set}_sp" "$mfccdir"
+      utils/fix_data_dir.sh "data/${train_set}_sp"
+    fi
+    nj_align=$(nj_by_spk "${train_set}_sp")
+    steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
+      "data/${train_set}_sp" "$lang_dir" "exp/tri4${exp_suffix}" \
+      "exp/tri4${exp_suffix}_ali_${train_set}_sp"
+  fi
   for x in "$train_set" "$valid_set"; do
     nj_align=$(nj_by_spk "$x")
     steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
@@ -141,7 +155,11 @@ if [ $stage -le 4 ]; then
 fi
 
 if [ $stage -le 5 ]; then
-  for x in "$train_set" "$valid_set" "${sev_sets[@]}"; do
+  train_hires_set="$train_set"
+  if $speed_perturb; then
+    train_hires_set="${train_set}_sp"
+  fi
+  for x in "$train_hires_set" "$valid_set" "${sev_sets[@]}"; do
     [ -d "data/$x" ] || continue
     utils/copy_data_dir.sh "data/$x" "data/${x}_hires"
     rm -f "data/${x}_hires/feats.scp" "data/${x}_hires/cmvn.scp" \
@@ -155,6 +173,12 @@ if [ $stage -le 5 ]; then
 fi
 
 if [ $stage -le 6 ]; then
+  train_set_tdnn="$train_set"
+  ali_dir_tdnn="exp/tri4${exp_suffix}_ali_${train_set}"
+  if $speed_perturb; then
+    train_set_tdnn="${train_set}_sp"
+    ali_dir_tdnn="exp/tri4${exp_suffix}_ali_${train_set}_sp"
+  fi
   test_sets="$valid_set"
   graph_dir=""
   if [ -f data/lang_test_tgsmall/G.fst ]; then
@@ -170,9 +194,10 @@ if [ $stage -le 6 ]; then
     done
   fi
   local/nnet3/run_tdnn_noivector.sh \
-    --train-set "$train_set" \
+    --train-set "$train_set_tdnn" \
     --test-sets "$test_sets" \
     --gmm "tri4${exp_suffix}" \
+    --ali-dir "$ali_dir_tdnn" \
     --lang-dir "$lang_dir" \
     --graph-dir "$graph_dir" \
     --affix "$out_prefix" \
