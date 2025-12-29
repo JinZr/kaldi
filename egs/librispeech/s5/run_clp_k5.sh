@@ -4,7 +4,7 @@ set -euo pipefail
 # CLP 5-fold recipe modeled after LibriSpeech GMM alignment + TDNN (nnet3, no iVector).
 
 stage=0
-nj=20
+nj=1
 fold=""
 clp_root="./data/clp_kaldi_5_fold/speaker_k5"
 wav_root=""
