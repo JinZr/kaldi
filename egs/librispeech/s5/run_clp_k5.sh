@@ -29,6 +29,20 @@ tri4_gauss=22000
 . ./path.sh
 . ./utils/parse_options.sh
 
+nj_by_spk() {
+  local d="$1"
+  local nspk
+  nspk=$(wc -l <"data/${d}/spk2utt" 2>/dev/null || echo 1)
+  if [ "$nspk" -lt 1 ]; then
+    nspk=1
+  fi
+  if [ "$nj" -gt "$nspk" ]; then
+    echo "$nspk"
+  else
+    echo "$nj"
+  fi
+}
+
 if [ -z "$fold" ]; then
   echo "$0: --fold is required (1..5)." >&2
   exit 1
@@ -112,13 +126,15 @@ fi
 
 if [ $stage -le 4 ]; then
   for x in "$train_set" "$valid_set"; do
-    steps/align_fmllr.sh --nj "$nj" --cmd "$train_cmd" \
+    nj_align=$(nj_by_spk "$x")
+    steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
       "data/$x" "$lang_dir" "exp/tri4${exp_suffix}" "exp/tri4${exp_suffix}_ali_$x"
   done
   if $decode_severity; then
     for x in "${sev_sets[@]}"; do
       [ -d "data/$x" ] || continue
-      steps/align_fmllr.sh --nj "$nj" --cmd "$train_cmd" \
+      nj_align=$(nj_by_spk "$x")
+      steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
         "data/$x" "$lang_dir" "exp/tri4${exp_suffix}" "exp/tri4${exp_suffix}_ali_$x"
     done
   fi
