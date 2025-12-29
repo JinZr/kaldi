@@ -11,7 +11,7 @@ wav_root=""
 out_prefix=""
 lang_dir="data/lang_nosp"
 dict_dir=""
-decode_severity=false
+decode_severity=true
 mfccdir=mfcc
 mfccdir_hires=mfcc_hires
 
