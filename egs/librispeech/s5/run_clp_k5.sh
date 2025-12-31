@@ -44,6 +44,14 @@ nj_by_spk() {
   fi
 }
 
+clean_align_dir() {
+  local d="$1"
+  if [ -d "$d" ]; then
+    # Avoid mixing stale alignments from earlier runs/models.
+    rm -f "$d"/ali.*.gz "$d"/pre_ali.*.gz "$d"/trans.* "$d"/fsts.*.gz
+  fi
+}
+
 if [ -z "$fold" ]; then
   echo "$0: --fold is required (1..5)." >&2
   exit 1
@@ -135,12 +143,14 @@ if [ $stage -le 4 ]; then
       utils/fix_data_dir.sh "data/${train_set}_sp"
     fi
     nj_align=$(nj_by_spk "${train_set}_sp")
+    clean_align_dir "exp/tri4${exp_suffix}_ali_${train_set}_sp"
     steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
       "data/${train_set}_sp" "$lang_dir" "exp/tri4${exp_suffix}" \
       "exp/tri4${exp_suffix}_ali_${train_set}_sp"
   fi
   for x in "$train_set" "$valid_set"; do
     nj_align=$(nj_by_spk "$x")
+    clean_align_dir "exp/tri4${exp_suffix}_ali_$x"
     steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
       "data/$x" "$lang_dir" "exp/tri4${exp_suffix}" "exp/tri4${exp_suffix}_ali_$x"
   done
@@ -148,6 +158,7 @@ if [ $stage -le 4 ]; then
     for x in "${sev_sets[@]}"; do
       [ -d "data/$x" ] || continue
       nj_align=$(nj_by_spk "$x")
+      clean_align_dir "exp/tri4${exp_suffix}_ali_$x"
       steps/align_fmllr.sh --nj "$nj_align" --cmd "$train_cmd" \
         "data/$x" "$lang_dir" "exp/tri4${exp_suffix}" "exp/tri4${exp_suffix}_ali_$x"
     done
