@@ -192,11 +192,11 @@ if [ $stage -le 6 ]; then
   fi
   test_sets="$valid_set"
   graph_dir=""
-  if [ -f data/lang_test_tgsmall/G.fst ]; then
-    graph_dir="exp/tri4${exp_suffix}/graph_tgsmall"
-    [ ! -f "$graph_dir/HCLG.fst" ] && utils/mkgraph.sh data/lang_test_tgsmall "exp/tri4${exp_suffix}" "$graph_dir"
+  if [ -f "${lang_dir}/G.fst" ]; then
+    graph_dir="exp/tri4${exp_suffix}/graph"
+    [ ! -f "$graph_dir/HCLG.fst" ] && utils/mkgraph.sh "$lang_dir" "exp/tri4${exp_suffix}" "$graph_dir"
   else
-    echo "$0: data/lang_test_tgsmall/G.fst not found; skipping decode."
+    echo "$0: ${lang_dir}/G.fst not found; skipping decode."
     test_sets=""
   fi
   if [ -n "$test_sets" ] && $decode_severity; then
